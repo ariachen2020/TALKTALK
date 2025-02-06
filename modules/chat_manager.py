@@ -1,5 +1,10 @@
 from anthropic import Anthropic
 import json
+import logging
+
+# 配置日誌
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 class ChatManager:
     def __init__(self, api_key):
@@ -10,20 +15,17 @@ class ChatManager:
 
     def get_response(self, message):
         try:
-            # 構建消息列表並確保正確的編碼
-            messages = []
-            for msg in self.conversation_history:
-                if msg["role"] == "user":
-                    messages.append({"role": "user", "content": str(msg["content"])})
-                elif msg["role"] == "assistant":
-                    messages.append({"role": "assistant", "content": str(msg["content"])})
-            
-            messages.append({"role": "user", "content": str(message)})
+            # 構建消息列表
+            messages = [{"role": "user", "content": msg["content"]} 
+                       for msg in self.conversation_history if msg["role"] == "user"]
+            messages.extend([{"role": "assistant", "content": msg["content"]} 
+                           for msg in self.conversation_history if msg["role"] == "assistant"])
+            messages.append({"role": "user", "content": message})
             
             response = self.client.messages.create(
                 model="claude-3-sonnet-20240229",
                 max_tokens=1024,
-                system=str(self.system_prompt),
+                system=self.system_prompt,
                 messages=messages
             )
             
@@ -39,6 +41,7 @@ class ChatManager:
                 
             return response_text
         except Exception as e:
+            logger.error(f"Error occurred: {str(e)}")
             return f"錯誤：{str(e)}"
 
     def clear_history(self):
