@@ -201,6 +201,16 @@ def main():
         st.header("設定")
         api_key = st.text_input("輸入 Anthropic API Key", type="password")
         
+        # Temperature 控制
+        temperature = st.slider(
+            "回應創意性",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.7,
+            step=0.1,
+            help="0.0 = 更確定性和專注, 1.0 = 更有創意和多樣性"
+        )
+        
         st.header("功能模式")
         mode = st.radio(
             "選擇模式",
@@ -210,8 +220,11 @@ def main():
         
         if api_key:
             if st.session_state.chat_manager is None:
-                st.session_state.chat_manager = ChatManager(api_key)
+                st.session_state.chat_manager = ChatManager(api_key, temperature=temperature)
                 st.success("API 連接成功！")
+            else:
+                # 更新 temperature
+                st.session_state.chat_manager.set_temperature(temperature)
     
     # 主要內容區域
     if not api_key:
